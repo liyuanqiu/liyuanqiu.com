@@ -1,0 +1,137 @@
+---
+name: Final-state at a Glance
+menu: docs
+route: /docs/final-state-at-a-glance
+---
+
+# Final-state at a Glance
+
+<div
+  style={{
+    textAlign: 'center',
+  }}
+>
+  <a href="https://github.com/final-state">
+    <img src="https://avatars2.githubusercontent.com/u/51064911?s=200&v=4" />
+  </a>
+</div>
+
+> [final-state](https://github.com/final-state) is a deadly simple state management for javascript apps.
+
+### Let's see how it works with React:
+
+- tracing state
+
+```typescript
+import { useCriteria } from 'react-final-state';
+// You defined your store in ./store
+import store from './store';
+
+function MyReactComponent() {
+  // 😃 just 1 line!!!
+  const load5 = useCriteria(store, state => state.monitor.cpu.load5);
+
+  return <p>{load5}</p>;
+}
+```
+
+- update state
+
+```typescript
+// You defined your store in ./store
+import store from './store';
+
+// 😃 also just 1 line!!!
+store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+```
+
+In the extremely simple examples above, we relied on an already defined `store`, so let's see how to define it, also very simple:
+
+```typescript
+import { createStore } from 'final-state';
+
+export default createStore(
+  // initial state
+  {
+    monitor: {
+      cpu: {
+        load1: 0,
+        load5: 0,
+        load15: 0,
+      },
+    },
+  },
+  // named actions
+  {},
+);
+```
+
+### Key features
+
+- One-line solution (with React)
+
+```typescript
+// tracing state
+const load5 = useCriteria(store, state => state.monitor.cpu.load5);
+// update state
+store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+```
+
+- Immutably updating with mutably coding
+
+```typescript
+// update state
+// seems like we are modify the state directly
+// but actually, it is just a draft
+// finally the changings will be merged to the real state object immutably
+store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+```
+
+- Automatic type inference for `Typescript` (with React)
+
+```typescript
+// tracing state
+// the variable `load5` has the type of store's state.monitor.cpu.load5
+const load5 = useCriteria(store, state => state.monitor.cpu.load5);
+```
+
+- Support [Optional-Chaining](https://github.com/tc39/proposal-optional-chaining)
+
+```typescript
+// `state.monitor` could be undefined
+
+// tracing state
+const load5 = useCriteria(store, state => state.monitor?.cpu.load5);
+// update state
+store.dispatch(draftState => (draftState.monitor?.cpu.load5 = 3.14));
+```
+
+- Named actions
+
+```typescript
+const store = createStore(
+  // initial state
+  {
+    monitor: {
+      cpu: {
+        load5: 0,
+      },
+    },
+  },
+  // named actions
+  {
+    setLoad5(draftState, load5) {
+      draftState.monitor.cpu.load5 = load5;
+    },
+  },
+);
+
+// update state
+store.dispatch('setLoad5', 3.14);
+```
+
+- Plugins
+
+  [final-state-logger](https://github.com/final-state/final-state-logger)
+
+  [final-state-rx](https://github.com/final-state/final-state-rx)
