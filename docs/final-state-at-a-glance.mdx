@@ -42,7 +42,9 @@ function MyReactComponent() {
 import store from './store';
 
 // 😃 also just 1 line!!!
-store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+store.dispatch(draftState => {
+  draftState.monitor.cpu.load5 = 3.14;
+});
 ```
 
 In the extremely simple examples above, we relied on an already defined `store`, so let's see how to define it, also very simple:
@@ -74,7 +76,9 @@ export default createStore(
 // tracing state
 const load5 = useCriteria(store, state => state.monitor.cpu.load5);
 // update state
-store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+store.dispatch(draftState => {
+  draftState.monitor.cpu.load5 = 3.14;
+});
 ```
 
 - Immutably updating with mutably coding
@@ -84,7 +88,9 @@ store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
 // seems like we are modify the state directly
 // but actually, it is just a draft
 // finally the changings will be merged to the real state object immutably
-store.dispatch(draftState => (draftState.monitor.cpu.load5 = 3.14));
+store.dispatch(draftState => {
+  draftState.monitor.cpu.load5 = 3.14;
+});
 ```
 
 - Automatic type inference for `Typescript` (with React)
@@ -103,7 +109,9 @@ const load5 = useCriteria(store, state => state.monitor.cpu.load5);
 // tracing state
 const load5 = useCriteria(store, state => state.monitor?.cpu.load5);
 // update state
-store.dispatch(draftState => (draftState.monitor?.cpu.load5 = 3.14));
+store.dispatch(draftState => {
+  draftState.monitor?.cpu.load5 = 3.14;
+});
 ```
 
 - Named actions
