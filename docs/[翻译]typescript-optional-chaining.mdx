@@ -1,0 +1,124 @@
+---
+name: Typescript Optional Chaining
+menu: docs
+route: /docs/typescript-optional-chaining
+---
+
+# Typescript Optional Chaining
+
+> 原文作者 Daniel，发表于 2019 年 10 月 1 日
+>
+> 翻译：李元秋
+>
+> 原文地址：https://devblogs.microsoft.com/typescript/announcing-typescript-3-7-beta/
+
+我们很高兴地宣布，Typescript 3.7 Beta 版本已经发布了。这是一个具有 Typescript 3.7 正式版本所有特性的版本。自现在起到 Typescript 3.7 正式版本发布，我们将持续修复缺陷以及进一步提升性能与稳定性。
+
+现在，你可以通过 NuGet 或下面的 npm 命令来开始使用该 Beta 版本：
+
+```bash
+npm install typescript@beta
+```
+
+同时，你可以从下列资源中获取对代码编辑器的支持：
+
+- [下载针对 Visual Studio 2019/2017 的支持工具](https://marketplace.visualstudio.com/items?itemName=TypeScriptTeam.typescript-37beta)
+- 跟随指引完成对 [Visual Studio Code](https://code.visualstudio.com/Docs/languages/typescript#_using-newer-typescript-versions) 及 [Sublime Text](https://github.com/Microsoft/TypeScript-Sublime-Plugin/#note-using-different-versions-of-typescript) 的支持
+
+Typescript 3.7 Beta 包含了一些我们最期待的特性！让我们从最闪亮的 Typescript 3.7 的新特性：Optional Chaining 开始，对这个全新的版本一探究竟。
+
+## Optional Chaining
+
+Typescript 3.7 实现了一个迄今为止呼声最高的 ECMAScript 特性：optional chaining! 我们的团队深度参与了 TC39 标准的制定，推动该特性进入 Stage 3，从而我们可以将其带给所有 Typescript 的用户。
+
+那么，optional chaining 到底是什么呢？从根本上讲，optional chaining 提供了一种编码方式，可以避免我们的表达式因遇到 `null` 或 `undefined` 而停止运行。optional chaining 的关键词是 `?.` 操作符，用于访问可选属性。看下面这行代码：
+
+```typescript
+let x = foo?.bar.baz();
+```
+
+当 `foo` 已经定义了，`foo.bar.baz()` 将被正确执行；当 `foo` 是 `null` 或 `undefined` 时，停止执行该表达式，并直接返回 `undefined`。
+
+直白地说，上述代码片段相当于下面的代码：
+
+```typescript
+let x = foo === null || foo === undefined ? undefined : foo.bar.baz();
+```
+
+需要注意的是，如果 `bar` 是 `null` 或 `undefined`，我们的代码在访问 `baz` 时仍将出错. 同样的，如果 `baz` 是 `null` 或 `undefined`，我们将在 call 它时出错。`?.` 仅仅检查其左侧的值是否为 `null` 或 `undefined`，不会检查任何右侧的属性。
+
+你将会发现，你可以使用 `?.` 来重写大量曾经使用 `&&` 来检查属性的代码：
+
+```typescript
+// Before
+if (foo && foo.bar && foo.bar.baz) {
+    // ...
+}
+
+// After-ish
+if (foo?.bar?.baz) {
+    // ...
+}
+```
+
+请记住一点，`?.` 与 `&&` 的行为并不一致，前者只检查 `null` 或 `undefined`，而后者会对所有“假值”作出响应（例如空字符串，`0`，`NaN` 以及 `false`）。
+
+Optional chaining 还有另外两种操作定义。第一种，叫做 _可选元素访问_，它的行为与可选属性访问相似，但允许我们访问非标识符属性（例如任意字符串、数字或是 symbols）：
+
+```typescript
+/**
+ * Get the first element of the array if we have an array.
+ * Otherwise return undefined.
+ */
+function tryGetFirstElement<T>(arr?: T[]) {
+    return arr?.[0];
+    // equivalent to
+    //   return (arr === null || arr === undefined) ?
+    //       undefined :
+    //       arr[0];
+}
+```
+
+另一种，叫做 _可选调用_，它允许我们有条件地调用表达式，如果表达式不为 `null` 或 `undefined`，则调用它，否则不做操作：
+
+```typescript
+async function makeRequest(url: string, log?: (msg: string) => void) {
+    log?.(`Request started at ${new Date().toISOString()}`);
+    // equivalent to
+    //   if (log !== null && log !== undefined) {
+    //       log(`Request started at ${new Date().toISOString()}`);
+    //   }
+
+    const result = (await fetch(url)).json();
+
+    log?.(`Request finished at at ${new Date().toISOString()}`);
+
+    return result;
+}
+```
+
+Optional chains 的行为仅限于 "普通" 以及可选属性访问、可选调用以及可选元素访问。它不会从这些表达式进一步扩展。换句话说：
+
+```typescript
+let result = foo?.bar / someComputation()
+```
+
+不会阻止除法操作以及 `someComputation()` 的调用。它等价于：
+
+```typescript
+let temp = foo === null || foo === undefined ? undefined : foo.bar;
+
+let result = temp / someComputation();
+```
+
+这将会导致被除数为 `undefined`，因此，当我们开启了 Typescript 的 `strictNullChecks` 标记时，下列代码将会出错：
+
+```typescript
+function barPercentage(foo?: { bar: number }) {
+    return foo?.bar / 100;
+    //     ~~~~~~~~
+    // Error: Object is possibly undefined.
+}
+```
+
+你可以从 [read up on the proposal](https://github.com/tc39/proposal-optional-chaining/) 以及 [view the original pull request](https://github.com/microsoft/TypeScript/pull/33294) 获取更多信息。

@@ -10,7 +10,7 @@
     "docz:build": "docz build"
   },
   "dependencies": {
-    "docz": "^2.0.0-rc.31",
+    "docz": "2.0.0-rc.55",
     "react": "^16.9.0",
     "react-dom": "^16.9.0"
   },
