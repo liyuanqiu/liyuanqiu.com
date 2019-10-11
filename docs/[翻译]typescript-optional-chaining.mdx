@@ -122,3 +122,37 @@ function barPercentage(foo?: { bar: number }) {
 ```
 
 你可以从 [read up on the proposal](https://github.com/tc39/proposal-optional-chaining/) 以及 [view the original pull request](https://github.com/microsoft/TypeScript/pull/33294) 获取更多信息。
+
+## Nullish Coalescing
+
+nullish coalescing 操作符是另一个即将和 optional chaining 手牵手一起到来的 ECMAScript 特性，也是我们团队持续致力推进的新特性。
+
+该特性提供了一个新的操作符：`??`，你可以把它看作一种处理 `null` 或 `undefined` 时的默认值“回退”。看这段代码：
+
+```typescript
+let x = foo ?? bar();
+```
+
+这是一种新的方式，来表达：
+
+> 当 `foo` 存在值时，使用它的值，若它是 `null` 或 `undefined` 时，计算 `bar()` 来取代它
+
+相应地，上述代码等价于下列代码：
+
+```typescript
+let x = foo !== null && foo !== undefined ? foo : bar();
+```
+
+`??` 操作符可以替代过去为了尝试默认值而使用 `||` 的用法。举个例子，下面这段代码片段尝试从 [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) 中读取上次存储的值（如果有的话）；然而，因为使用了 `||`，它是有 bug 的：
+
+```typescript
+function initializeAudio() {
+  let volume = localStorage.volume || 0.5;
+
+  // ...
+}
+```
+
+当 `localStorage.volume` 被设成 `0` 时，volume 变量将被设成 `0.5`，这显然不是我们想要的结果。`??` 避免了一些因假值（例如 `0`，`NaN` 以及 `""`）引起的一些预料之外的行为。
+
+我们衷心感谢社区的成员 [Wenlu Wang](https://github.com/Kingwl) 以及 [Titian Cernicova Dragomir](https://github.com/dragomirtitian) 实现了这个特性！你可以从 [check out their pull request](https://github.com/microsoft/TypeScript/pull/32883) 以及 [the nullish coalescing proposal repository](https://github.com/tc39/proposal-nullish-coalescing/) 获取更多信息。
