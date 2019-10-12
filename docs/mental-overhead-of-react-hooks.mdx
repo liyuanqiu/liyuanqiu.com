@@ -1,0 +1,124 @@
+---
+name: Mental Overhead of React Hooks
+menu: docs
+route: /docs/mental-overhead-of-react-hooks
+---
+
+# Mental Overhead of React Hooks
+
+When we first get in touch with `React hooks`, I believe most of us were excited, and couldn't wait to dine.
+
+But very soon, we found that it dirtied our mouth, and then realized the truth:
+
+> React Hooks is not that easy to master
+
+---
+
+Let's see some snippets:
+
+```typescript
+// This is a typical custom hook
+// It fetches "foo" from server
+function useFoo(): undefined | Foo {
+  const [foo, setFoo] = useState<undefined | Foo>();
+  useEffect(() => {
+    fetch(...)
+      .then(res => res.json())
+      .then(json => setFoo(json));
+  }, []);
+  return foo;
+}
+```
+
+The custom hook `useFoo` is very easy to understand. The return value will be `undefined` until the server gives back a correct JSON.
+
+And let's see another custom hook:
+
+```typescript
+function useBar(foo: Foo): Bar {
+  return useMemo(() => {
+    // returns a bar instance which is computed using foo
+  }, [foo]);
+}
+```
+
+NOTE!!! THE SHOW BEGINS ↓↓↓
+
+```typescript
+import useFoo from './useFoo';
+import useBar from './useBar';
+
+function MyReactComponent() {
+  const foo = useFoo();
+  // Ooops! Some jam splashed on my face！
+  const bar = useBar(foo);
+
+  return ...;
+}
+```
+
+An error occurred because `useBar` only accepts parameter `foo` as `Foo`, not `undefined | Foo`. So we should check the value of `foo` in some place:
+
+```typescript
+function MyReactComponent() {
+  const foo = useFoo();
+  if (foo === undefined) {
+    return null;
+  }
+  // Pick up the handkerchief...
+  const bar = useBar(foo);
+
+  return ...;
+}
+```
+
+Obviously it is a big mistake to call hooks conditionally.
+
+So we had to try another way...
+
+```typescript
+function useBar(foo: undefined | Foo): Bar {
+  return useMemo(() => {
+    if (foo === undefined) {
+      return <Return what??? Another undefined???>;
+    }
+    // returns a bar instance which is computed using foo
+  }, [foo]);
+}
+```
+
+We can put the `if` statement into `useBar`, but really ugly, no elegance at all:
+
+- To `useFoo`, it is reasonable to return `undefined | Foo`, its behavior is exactly matching with the logic.
+- To `useBar`, there's totally no need to accept an `undefined` foo, remember its name is not `useBarByUseFoo`.
+
+If `useBar` accepts the `undefined` foo, what `bar` should be returned? An empty `Bar` object? Or just `undefined`? Neither is reasonable.
+
+So finally, I choose to wrap `MyReactComponent`:
+
+```typescript
+import useFoo from './useFoo';
+import useBar from './useBar';
+
+function MyReactComponent({ foo }: { foo: Foo }) {
+  const bar = useBar(foo);
+
+  return ...;
+}
+
+function FooWrapper() {
+  const foo = useFoo();
+  if (foo === undefined) {
+    return null;
+  }
+  return <MyReactComponent foo={foo} />;
+}
+
+export default FooWrapper;
+```
+
+Finally, I cleaned my mouth, but have no appetite to eat anymore.
+
+---
+
+React Hooks is cool, but really need a strong programming sense. Write hooks, rethink it, refactor it, a loop, until retired.
