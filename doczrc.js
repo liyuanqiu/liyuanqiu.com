@@ -3,4 +3,5 @@ export default {
   themeConfig: {
     mode: 'dark',
   },
+  ignore: ['README.md', 'LICENSE.md'],
 };
