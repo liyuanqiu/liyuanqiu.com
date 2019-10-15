@@ -1,0 +1,154 @@
+---
+name: Be cautious of instanceof
+menu: docs
+route: /docs/be-cautious-of-instanceof
+---
+
+# Be cautious of `instanceof`
+
+As is known to many JavaScript developers, the `instanceof` operator tests whether the `prototype` property of a constructor appears anywhere in the prototype chain of an object.
+
+See some examples first:
+
+```javascript
+const a = [];
+a instanceof Array; // true
+a instanceof Object; // true
+a instanceof Number; // false
+
+class Foo {}
+new Foo() instanceof Foo; // true
+new Foo() instanceof Object; // true
+new Foo() instanceof Array; // false
+```
+
+Looks working perfectly, but sometimes, `instanceof` causes confusing, so let’s dive in and see what’s wrong.
+
+## Store 1: `new Foo()` is not an instance of `Foo`?
+
+Assuming we have 2 libraries:
+
+```javascript
+// Library A
+export class Foo() {}
+```
+
+```javascript
+// Library B
+import { Foo } from 'A';
+export function test(a) {
+  return a instanceof Foo;
+}
+
+// B's package.json
+{
+  "dependencies": {
+    "A": <version>
+  }
+}
+```
+
+And our business code:
+
+```javascript
+import { Foo } from 'A';
+import { test } from 'B';
+
+const foo = new Foo();
+
+console.log(test(foo)); // will print false!!!
+
+// package.json
+{
+  "dependencies": {
+    "A": <version>,
+    "B": <version>
+  }
+}
+```
+
+The code above will print `false` !!!
+Does it mean `new Foo()` is not an instance of `Foo`?
+OBVIOUSLY NOT!!!
+
+Let's dig into the details:
+
+- Library B depends on A, so its author added A into B's `dependencies`
+- Business code also depends on A, so A is added to `dependencies` too
+
+Do you feel something wrong?
+Yes, totally right, the truth is that THEY USE DIFFERENT A.
+See the project structure:
+
+```plain
+.
+├── index.js
+└── node_modules
+    ├── A
+    └── B
+        └── node_modules
+            └── A
+```
+
+`node_modules/A` is not `node_modules/B/node_modules/A`
+
+### So how to avoid this problem?
+
+##### Solution 1:
+
+If it is a strong requirement to test whether a variable is an instance of `Foo`, it's better to add a static method `isFoo` to `Foo`:
+
+```javascript
+class Foo() {
+  static isFoo() {
+    // Performs more robust checking
+  }
+}
+```
+
+##### Solution 2:
+
+B can mark A as a peer dependence, so it can share the same A with its users:
+
+```javascript
+// B's package.json
+{
+  "peerDependencies": {
+    "A": <version>
+  }
+}
+```
+
+##### Solution 3:
+
+B stops using `instanceof`, and performs testing by other features of A. Similar to solution 1.
+
+## Store 2: `Array.isArray` vs `instanceof Array`?
+
+```javascript
+const iframe = document.createElement('iframe');
+document.body.appendChild(iframe);
+const { Array: YaArray } = window.frames[window.frames.length - 1];
+
+const a = new Array(1, 2, 3);
+const ya = new YaArray(1, 2, 3);
+
+a instanceof Array; // true
+ya instanceof Array; // false
+
+Array.isArray(a); // true
+Array.isArray(ya); // true
+```
+
+Yes, same problem with Store 1, `Array` is not `YaArray`.
+
+```javascript
+Array === YaArray; // false
+```
+
+We can see, `Array` chooses the solution 1 above, it provides `isArray` static method to test instances.
+
+## Conclusion
+
+- As a library developer, you should be very cautious of `instanceof`. Choose the IS method first like `Array.isArray`, or implement it yourself. If must use `instanceof`, make sure that the constructors on both sides of `instanceof` are not your own dependencies, they should be listed in the `peerDependencies` to share with your users.
+- As a project developer, you just need to take responsibility to your own. Check both sides of `instanceof`, make sure they have the same constructor, not just the same name.
