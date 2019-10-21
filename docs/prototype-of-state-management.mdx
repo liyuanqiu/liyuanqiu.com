@@ -1,0 +1,113 @@
+---
+name: 👉 Prototype of State Management
+menu: docs
+route: /docs/prototype-of-state-management
+---
+
+# Prototype of State Management
+
+> "Talk is cheap, show me the code." --- Linus Torvalds
+
+## Prototype definition
+
+```typescript
+function createStore<T>(initialState: T) {
+  let state = initialState;
+  const listeners: Set<Function> = new Set();
+
+  function unSubscribe(listener: Function) {
+    listeners.delete(listener);
+  }
+
+  return {
+    getState() {
+      return state;
+    },
+    subscribe(listener: Function) {
+      listeners.add(listener);
+      return () => unSubscribe(listener);
+    },
+    unSubscribe,
+    update(updater: (state: T) => T) {
+      state = updater(state);
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+  };
+}
+```
+
+## Testing
+
+```typescript
+const store = createStore({
+  a: 1,
+  b: 'good',
+  c: false,
+});
+
+console.log(JSON.stringify(store.getState(), null, 2));
+/* console.log
+{
+  "a": 1,
+  "b": "good",
+  "c": false
+}
+*/
+
+store.update(() => ({
+  a: 2,
+  b: 'bad',
+  c: true,
+}));
+
+console.log(JSON.stringify(store.getState(), null, 2));
+/* console.log
+{
+  "a": 2,
+  "b": "bad",
+  "c": true
+}
+*/
+
+const unSubscribe = store.subscribe(() =>
+  console.log('state has been updated!!!'),
+);
+
+store.update(state => ({
+  ...state,
+  a: 200,
+}));
+/* console.log
+state has been updated!!!
+*/
+
+console.log(JSON.stringify(store.getState(), null, 2));
+/*
+{
+  "a": 200,
+  "b": "bad",
+  "c": true
+}
+*/
+
+unSubscribe();
+
+store.update(state => ({
+  ...state,
+  b: 'cool',
+}));
+/* console.log
+<NOTHING>
+*/
+
+console.log(JSON.stringify(store.getState(), null, 2));
+/*
+{
+  "a": 200,
+  "b": "cool",
+  "c": true
+}
+*/
+```
