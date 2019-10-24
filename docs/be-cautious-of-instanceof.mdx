@@ -24,7 +24,7 @@ new Foo() instanceof Array; // false
 
 Looks working perfectly, but sometimes, `instanceof` causes confusing, so let’s dive in and see what’s wrong.
 
-## Store 1: `new Foo()` is not an instance of `Foo`?
+## Story 1: `new Foo()` is not an instance of `Foo`?
 
 Assuming we have 2 libraries:
 
@@ -123,7 +123,7 @@ B can mark A as a peer dependence, so it can share the same A with its users:
 
 B stops using `instanceof`, and performs testing by other features of A. Similar to solution 1.
 
-## Store 2: `Array.isArray` vs `instanceof Array`?
+## Story 2: `Array.isArray` vs `instanceof Array`?
 
 ```javascript
 const iframe = document.createElement('iframe');
@@ -140,7 +140,7 @@ Array.isArray(a); // true
 Array.isArray(ya); // true
 ```
 
-Yes, same problem with Store 1, `Array` is not `YaArray`.
+Yes, same problem with Story 1, `Array` is not `YaArray`.
 
 ```javascript
 Array === YaArray; // false
