@@ -1,0 +1,132 @@
+---
+name: 👉 Enhancing create-react-app
+menu: docs
+route: /docs/enhancing-create-react-app
+---
+
+# Enhancing `create-react-app`
+
+## Step 1
+
+```bash
+yarn create react-app your-project --typescript
+```
+
+## Step 2
+
+```bash
+#!/bin/sh
+
+# 安装 airbnb 的 eslint 规则包
+npx install-peerdeps --dev eslint-config-airbnb
+
+# 安装开发依赖
+yarn add -D \
+  customize-cra react-app-rewired \
+  prettier eslint-config-prettier eslint-plugin-prettier \
+  eslint-config-react-app \
+  @typescript-eslint/eslint-plugin @typescript-eslint/parser \
+  eslint-plugin-flowtype@3.x babel-eslint \
+  less less-loader \
+  webpack-bundle-analyzer \
+  babel-plugin-import
+
+# 将一些依赖迁移到 devDependencies
+yarn remove react-scripts @types/jest @types/node @types/react @types/react-dom typescript
+yarn add -D react-scripts @types/jest @types/node @types/react @types/react-dom typescript
+
+# 将 scripts 中的 react-scripts 替换为 react-app-rewired
+sed -i '' -e 's/"react-scripts /"react-app-rewired /g' package.json
+
+# 写入 config-overrides.js
+cat > config-overrides.js <<EOF
+const {
+  override,
+  useEslintRc,
+  addBundleVisualizer,
+  addLessLoader,
+  fixBabelImports,
+} = require('customize-cra');
+
+const modifyVars = require('./src/custom-less-vars');
+
+module.exports = override(
+  useEslintRc('.eslintrc.js'),
+  fixBabelImports({
+    libraryName: 'antd',
+    style: true,
+  }),
+  addLessLoader({
+    javascriptEnabled: true,
+    modifyVars,
+  }),
+  process.env.NODE_ENV === 'production' &&
+    addBundleVisualizer({
+      analyzerMode: 'static',
+    }),
+);
+EOF
+
+# 写入 src/custom-less-vars.js
+cat > src/custom-less-vars.js <<EOF
+module.exports = {};
+EOF
+
+# 写入 .eslintrc.js
+cat > .eslintrc.js <<EOF
+module.exports = {
+  parser: '@typescript-eslint/parser',
+  extends: [
+    'plugin:@typescript-eslint/recommended',
+    'react-app',
+    'airbnb',
+    'plugin:prettier/recommended',
+  ],
+  rules: {
+    'react/jsx-filename-extension': [
+      1,
+      {
+        extensions: ['.tsx', '.jsx'],
+      },
+    ],
+    'import/prefer-default-export': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    'react/jsx-one-expression-per-line': 'off',
+  },
+  settings: {
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+      },
+    },
+  },
+  env: {
+    jest: true,
+    browser: true,
+  },
+};
+EOF
+
+# 写入 .eslintignore
+cat > .eslintignore <<EOF
+src/serviceWorker.ts
+src/react-app-env.d.ts
+EOF
+
+# 写入 .prettierrc.js
+cat > .prettierrc.js <<EOF
+module.exports = {
+  printWidth: 80,
+  semi: true,
+  singleQuote: true,
+  trailingComma: 'all',
+};
+EOF
+
+# 修复所有可修复的 eslint 问题
+yarn eslint -c .eslintrc.js --ignore-path .eslintignore --ext jsx --ext js --ext tsx --ext ts --fix src
+
+echo "请手动删除 package.json 中的 eslintConfig 字段！"
+echo
+echo
+```
