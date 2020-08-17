@@ -1,0 +1,120 @@
+---
+name: 👉 Don't use destructuring assignment with react-redux `useSelector`
+menu: docs
+route: /docs/destructuring-assignment-with-use-selector
+---
+
+# Don't use destructuring assignment with react-redux `useSelector`
+
+## 👉 Destructuring assignment
+
+Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
+
+Example:
+
+```javascript
+const obj = {
+  foo: 1,
+  bar: 'hello',
+  baz: true,
+};
+// Destructuring assignment
+const { foo, bar, baz } = obj;
+```
+
+This syntax is very convenient to read the properties from an object and assign them to the variables.
+
+## 👉 react-redux `useSelector`
+
+Reference: https://react-redux.js.org/api/hooks#useselector
+
+Example:
+
+```javascript
+const bar = useSelector(state => state.foo.bar);
+```
+
+`useSelector` subscribes to the Redux store, and run your selector whenever an action is dispatched.
+
+## 👉 Don't use them together!
+
+Suppose we have such a Redux state hierarchy:
+
+```typescript
+// typescript typing
+interface State {
+  foo: {
+    bar: number;
+    baz: boolean;
+  };
+  qux: number;
+}
+```
+
+And in the React component, we use `useSelector` with destructuring assignment:
+
+```javascript
+function SomeComponent() {
+  const { bar } = useSelector(state => state.foo);
+  // make some logs
+  console.log(1);
+  return ...
+}
+```
+
+Let's update the Redux state:
+
+```javascript
+// update state.foo.baz
+store.dispatch(updateBazAction());
+```
+
+Unfortunately, the `console.log(1)` was excuted, obviously it is not expected.
+
+## 👉 Why?
+
+If we update `state.foo.baz` immutably, the reference of `state.foo` will be changed.
+
+So each time an action is dispatched, the selector returns a new object. That will cause the React component to render.
+
+More clearly, this line:
+
+```javascript
+const { bar } = useSelector(state => state.foo);
+```
+
+is just equivalent to:
+
+```javascript
+const foo = useSelector(state => state.foo);
+const { bar } = foo;
+```
+
+---
+
+So it's better not to use destructuring assignment with react-redux `useSelector` together, even if you can manually ensure bug-free right now.
+
+In the long run, the Redux state hierarchy in your project may be changed, the old-good code may cause bugs again.
+
+Example:
+This snippet is bug-free now:
+
+```typescript
+interface State {
+  foo: {
+    bar: number;
+  };
+}
+const { bar } = useSelector(state => state.foo);
+```
+
+And several weeks later, your teammate adds a `baz` to `foo` and update it very frequently, your code will cause a performance issue.
+
+```typescript
+interface State {
+  foo: {
+    bar: number;
+    baz: boolean;
+  };
+}
+```
